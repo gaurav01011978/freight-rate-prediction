@@ -1,25 +1,36 @@
-# Freight Rate Prediction Challenge
+# Freight Rate Prediction – Spotter ML Assessment
 
-See `Freight_Rate_ML_Assessment.pdf` for the assessment instructions.
+Predicts truckload `posted_rate` using LightGBM.
 
-## What to do
+## Results (time-based holdout: train Jan–Aug, test Sep–Oct 2025)
+| Model | MAE ($) | MAPE |
+|---|---|---|
+| Baseline (median rate/mile × distance) | 175.08 | – |
+| LightGBM | 30.04 | 1.2% |
 
-1. Train and validate your model using `data/train_test.csv`.
-2. Predict every load in `data/validation.csv`. Each load has a unique `load_id`.
-3. Fill the matching `predicted_rate` values in `data/validation_predictions_template.csv` and save it as `validation_predictions.csv`.
-4. Predict every row in `data/december_chart_inputs.csv` by filling its `predicted_rate` column.
-5. Install the scorer requirements and run:
-
-```bash
-python -m pip install -r requirements.txt
-python score.py --predictions validation_predictions.csv --december-predictions data/december_chart_inputs.csv
+## Project structure
+```
+freight_rate_model.ipynb     # full pipeline: EDA, cleaning, model, predictions
+validation_predictions.csv   # final predictions (12,000 loads)
+score.py                     # provided scorer
+requirements.txt
+data/                        # place the provided CSV files here
 ```
 
-The scorer validates both files and creates `scorer_results/candidate_december.png`.
+## How to run
+1. Put `train_test.csv`, `validation.csv`, `validation_predictions_template.csv`, `december_chart_inputs.csv` inside `data/`.
+2. Install dependencies:
+```bash
+   pip install -r requirements.txt
+```
+3. Open `freight_rate_model.ipynb`, set `DATA = "data/"` in cell 2 (it currently points to Google Drive), and run all cells. You can skip cell 1 (the Google Drive mount) outside Colab.
+4. Validate outputs and create the December chart:
+```bash
+   python score.py --predictions outputs/validation_predictions.csv --december-predictions outputs/december_chart_inputs.csv
+```
 
-## Submit
-
-- GitHub repository containing your code, dependencies, and run instructions
-- `validation_predictions.csv`
-- PDF or DOCX report containing your validation, data split approach and `candidate_december.png`
-- 2-3 minute Loom link
+## Key decisions
+- **Time-based split** because validation (Nov–Dec) is in the future.
+- **Coordinates instead of city names** because 8 validation cities never appear in training.
+- **Dropped `market_index`**: its relationship with rates shifts over time (MAE worsened from 30 to 76).
+- **Cleaning**: negative weights → absolute value; ~1.4% extreme rate-per-mile outliers removed from training.
